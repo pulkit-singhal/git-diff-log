@@ -1,9 +1,12 @@
 from git import Repo
 from git.exc import NoSuchPathError
 from termcolor import colored
+from hashstore import HashStore
 import argparse
 import sys
 import time
+
+ignoredHashes = HashStore()
 
 class DiffCommit:
 	def __init__(self, author, date, message, hexsha):
@@ -20,6 +23,7 @@ parser.add_argument("directory")
 parser.add_argument("first")
 parser.add_argument("second")
 parser.add_argument("-c", nargs = "?", type = int)
+parser.add_argument("-r", action = "store_true")
 args = parser.parse_args()
 
 print(colored("Starting Git-Diff-Log", "green"))
@@ -58,10 +62,30 @@ for commit in commitsInFirst:
 		commitsDifference.append(DiffCommit(commit.author, commit.authored_date, commit.message, commit.hexsha))
 commitsDifference.sort()
 
-for commit in commitsDifference:
-	print(colored("commit {}".format(commit.sha), 'yellow'))
-	print("Author: {} <{}>".format(commit.author.name, commit.author.email))
-	print("Date  : {}".format(time.strftime("%c %Z", time.localtime(commit.date))))
-	print()
-	print("\t{}".format(commit.message))
-	print()
+if not args.r:
+	for commit in commitsDifference:
+		if not ignoredHashes.isPresent(commit.sha):
+			print(colored("commit {}".format(commit.sha), 'yellow'))
+			print("Author: {} <{}>".format(commit.author.name, commit.author.email))
+			print("Date  : {}".format(time.strftime("%c %Z", time.localtime(commit.date))))
+			print()
+			print("\t{}".format(commit.message))
+			print()
+else:
+	for commit in commitsDifference:
+		if not ignoredHashes.isPresent(commit.sha):
+			print(colored("commit {}".format(commit.sha), 'yellow'))
+			print("Author: {} <{}>".format(commit.author.name, commit.author.email))
+			print("Date  : {}".format(time.strftime("%c %Z", time.localtime(commit.date))))
+			print()
+			print("\t{}".format(commit.message))
+			print()
+			while True:
+				inp = input("Resolve[R] / Ignore[I] : ")
+				if inp.upper() == 'I':
+					ignoredHashes.insert(commit.sha)
+					break
+				elif inp.upper() == 'R':
+					break
+				else:
+					print("Retry the choice again")
