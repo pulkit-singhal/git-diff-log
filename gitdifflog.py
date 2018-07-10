@@ -1,12 +1,6 @@
-from git import Repo
-from git.exc import NoSuchPathError
 from termcolor import colored
-from hashstore import HashStore
+from githelper import GitHelper
 import argparse
-import sys
-import time
-
-ignoredHashes = HashStore()
 
 parser = argparse.ArgumentParser()
 parser.add_argument("directory")
@@ -18,62 +12,17 @@ args = parser.parse_args()
 
 print(colored("Starting Git-Diff-Log", "green"))
 print("Searching for Git Repo in", args.directory)
-try:
-	repo = Repo(args.directory)
-except NoSuchPathError as e:
-	print(colored("Specified directory does not exists", "red"))
-	sys.exit(0)
 
-if repo.bare:
-	print(colored("The directory does not contains the .git folder", "red"))
-	sys.exit(0)
+git = GitHelper(args.directory)
+git.validate_branches_are_present(args.first, args.second)
 
-branches = [branch.name for branch in repo.branches]
-if args.first not in branches or args.second not in branches:
-	print(colored("Specified branches does not exists", "red"))
-	sys.exit(0)
+commits_in_first = git.commits(args.first, max_count = args.c)
+commits_in_second = git.commits(args.second)
 
-if args.c:
-	commitsInFirst = list(repo.iter_commits(args.first, max_count=args.c))
-else:
-	commitsInFirst = list(repo.iter_commits(args.first))
-commitsInSecond = list(repo.iter_commits(args.second))
+different_commits = git.different_commits(commits_in_first, commits_in_second)
+different_commits.sort(key = lambda commit: commit.authored_date)
 
-def printCommitInformation(commit):
-	print(colored("commit {}".format(commit.hexsha), 'yellow'))
-	print("Author: {} <{}>".format(commit.author.name, commit.author.email))
-	print("Date  : {}".format(time.strftime("%c %Z", time.localtime(commit.authored_date))))
-	print()
-	print("\t{}".format(commit.message.strip()))
-	print()
-
-commitsDifference = []
-for commit in commitsInFirst:
-	commitMessage = commit.message
-	commitStats = commit.stats.files
-
-	matched = False
-	for secondCommit in commitsInSecond:
-		if secondCommit.message == commitMessage and secondCommit.stats.files == commitStats:
-			matched = True
-	if not matched:
-		commitsDifference.append(commit)
-commitsDifference.sort(key = lambda c: c.authored_date)
-
-if not args.r:
-	for commit in commitsDifference:
-		if not ignoredHashes.isPresent(commit.hexsha):
-			printCommitInformation(commit)
-else:
-	for commit in commitsDifference:
-		if not ignoredHashes.isPresent(commit.hexsha):
-			printCommitInformation(commit)
-			while True:
-				inp = input("Resolve[R] / Ignore[I] : ")
-				if inp.upper() == 'I':
-					ignoredHashes.insert(commit.hexsha)
-					break
-				elif inp.upper() == 'R':
-					break
-				else:
-					print("Invalid choice. Please try again.")
+for commit in different_commits:
+	if git.should_print_commit(commit):
+		git.print_commit_info(commit)
+		git.resolve_commit(commit, args.r)
