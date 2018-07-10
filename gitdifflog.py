@@ -39,6 +39,14 @@ else:
 	commitsInFirst = list(repo.iter_commits(args.first))
 commitsInSecond = list(repo.iter_commits(args.second))
 
+def printCommitInformation(commit):
+	print(colored("commit {}".format(commit.hexsha), 'yellow'))
+	print("Author: {} <{}>".format(commit.author.name, commit.author.email))
+	print("Date  : {}".format(time.strftime("%c %Z", time.localtime(commit.authored_date))))
+	print()
+	print("\t{}".format(commit.message.strip()))
+	print()
+
 commitsDifference = []
 for commit in commitsInFirst:
 	commitMessage = commit.message
@@ -55,21 +63,11 @@ commitsDifference.sort(key = lambda c: c.authored_date)
 if not args.r:
 	for commit in commitsDifference:
 		if not ignoredHashes.isPresent(commit.hexsha):
-			print(colored("commit {}".format(commit.hexsha), 'yellow'))
-			print("Author: {} <{}>".format(commit.author.name, commit.author.email))
-			print("Date  : {}".format(time.strftime("%c %Z", time.localtime(commit.authored_date))))
-			print()
-			print("\t{}".format(commit.message.strip()))
-			print()
+			printCommitInformation(commit)
 else:
 	for commit in commitsDifference:
 		if not ignoredHashes.isPresent(commit.hexsha):
-			print(colored("commit {}".format(commit.hexsha), 'yellow'))
-			print("Author: {} <{}>".format(commit.author.name, commit.author.email))
-			print("Date  : {}".format(time.strftime("%c %Z", time.localtime(commit.authored_date))))
-			print()
-			print("\t{}".format(commit.message.strip()))
-			print()
+			printCommitInformation(commit)
 			while True:
 				inp = input("Resolve[R] / Ignore[I] : ")
 				if inp.upper() == 'I':
