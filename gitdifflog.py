@@ -8,16 +8,6 @@ import time
 
 ignoredHashes = HashStore()
 
-class DiffCommit:
-	def __init__(self, author, date, message, hexsha):
-		self.author = author
-		self.date = date
-		self.message = message.strip()
-		self.sha = hexsha
-
-	def __lt__(self, other):
-		return self.date < other.date
-
 parser = argparse.ArgumentParser()
 parser.add_argument("directory")
 parser.add_argument("first")
@@ -59,33 +49,33 @@ for commit in commitsInFirst:
 		if secondCommit.message == commitMessage and secondCommit.stats.files == commitStats:
 			matched = True
 	if not matched:
-		commitsDifference.append(DiffCommit(commit.author, commit.authored_date, commit.message, commit.hexsha))
-commitsDifference.sort()
+		commitsDifference.append(commit)
+commitsDifference.sort(key = lambda c: c.authored_date)
 
 if not args.r:
 	for commit in commitsDifference:
-		if not ignoredHashes.isPresent(commit.sha):
-			print(colored("commit {}".format(commit.sha), 'yellow'))
+		if not ignoredHashes.isPresent(commit.hexsha):
+			print(colored("commit {}".format(commit.hexsha), 'yellow'))
 			print("Author: {} <{}>".format(commit.author.name, commit.author.email))
-			print("Date  : {}".format(time.strftime("%c %Z", time.localtime(commit.date))))
+			print("Date  : {}".format(time.strftime("%c %Z", time.localtime(commit.authored_date))))
 			print()
-			print("\t{}".format(commit.message))
+			print("\t{}".format(commit.message.strip()))
 			print()
 else:
 	for commit in commitsDifference:
-		if not ignoredHashes.isPresent(commit.sha):
-			print(colored("commit {}".format(commit.sha), 'yellow'))
+		if not ignoredHashes.isPresent(commit.hexsha):
+			print(colored("commit {}".format(commit.hexsha), 'yellow'))
 			print("Author: {} <{}>".format(commit.author.name, commit.author.email))
-			print("Date  : {}".format(time.strftime("%c %Z", time.localtime(commit.date))))
+			print("Date  : {}".format(time.strftime("%c %Z", time.localtime(commit.authored_date))))
 			print()
-			print("\t{}".format(commit.message))
+			print("\t{}".format(commit.message.strip()))
 			print()
 			while True:
 				inp = input("Resolve[R] / Ignore[I] : ")
 				if inp.upper() == 'I':
-					ignoredHashes.insert(commit.sha)
+					ignoredHashes.insert(commit.hexsha)
 					break
 				elif inp.upper() == 'R':
 					break
 				else:
-					print("Retry the choice again")
+					print("Invalid choice. Please try again.")

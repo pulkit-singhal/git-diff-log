@@ -8,7 +8,7 @@ class HashStore(object):
 
 	def insert(self, value):
 		self.__getConnection__()
-		self.cursor.execute("INSERT INTO hashes VALUES (?)", (value, ))
+		self.cursor.execute("INSERT IGNORE INTO hashes VALUES (?)", (value, ))
 		self.__closeConnection()
 
 	def isPresent(self, value):
