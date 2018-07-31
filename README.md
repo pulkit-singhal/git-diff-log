@@ -1,7 +1,6 @@
 # git-diff-log
 ### Find difference in commits of two branches with a single command
 
-[![AUR](https://img.shields.io/aur/license/yaourt.svg)]()
 [![PYT](https://img.shields.io/badge/Python-%3E%3D%203.0-brightgreen.svg)]()
 [![SDP](https://img.shields.io/badge/Side%20Project-True-yellow.svg)]()
 
